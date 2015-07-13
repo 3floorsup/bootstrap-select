@@ -1307,6 +1307,11 @@
             that.$menuInner.find('.selected').removeClass('selected').find('a').attr('aria-selected', false);
             that.setSelected(clickedIndex, true);
           } else { // Toggle the one we have chosen if we are multi select.
+
+            // prevent empty value being selected
+            if($option.val().trim() == '')
+              return;
+
             $option.prop('selected', !state);
             that.setSelected(clickedIndex, !state);
             $this.blur();
