@@ -496,13 +496,15 @@
        * @param [index]
        * @param [classes]
        * @param [optgroup]
+       * @param [value]
        * @returns {string}
        */
-      var generateLI = function (content, index, classes, optgroup) {
+      var generateLI = function (content, index, classes, optgroup, value) {
         return '<li' +
             ((typeof classes !== 'undefined' & '' !== classes) ? ' class="' + classes + '"' : '') +
             ((typeof index !== 'undefined' & null !== index) ? ' data-original-index="' + index + '"' : '') +
             ((typeof optgroup !== 'undefined' & null !== optgroup) ? 'data-optgroup="' + optgroup + '"' : '') +
+            ((typeof value !== 'undefined' & null !== value) ? 'data-original-value="' + value + '"' : '') +
             '>' + content + '</li>';
       };
 
@@ -592,10 +594,10 @@
 
             if (index !== 0 && _li.length > 0) { // Is it NOT the first option of the select && are there elements in the dropdown?
               liIndex++;
-              _li.push(generateLI('', null, 'divider', optID + 'div'));
+              _li.push(generateLI('', null, 'divider', optID + 'div', $this.val()));
             }
             liIndex++;
-            _li.push(generateLI(label, null, 'dropdown-header' + optGroupClass, optID));
+            _li.push(generateLI(label, null, 'dropdown-header' + optGroupClass, optID, $this.val()));
           }
 
           if (that.options.hideDisabled && isDisabled) {
@@ -603,17 +605,17 @@
             return;
           }
 
-          _li.push(generateLI(generateA(text, 'opt ' + optionClass + optGroupClass, inline, tokens), index, '', optID));
+          _li.push(generateLI(generateA(text, 'opt ' + optionClass + optGroupClass, inline, tokens), index, '', optID, $this.val());
         } else if ($this.data('divider') === true) {
-          _li.push(generateLI('', index, 'divider'));
+          _li.push(generateLI('', index, 'divider', null, $this.val()));
         } else if ($this.data('hidden') === true) {
-          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index, 'hidden is-hidden'));
+          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index, 'hidden is-hidden', null, $this.val()));
         } else {
           if (this.previousElementSibling && this.previousElementSibling.tagName === 'OPTGROUP') {
             liIndex++;
-            _li.push(generateLI('', null, 'divider', optID + 'div'));
+            _li.push(generateLI('', null, 'divider', optID + 'div', $this.val()));
           }
-          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index));
+          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index, null, null, $this.val()));
         }
 
         that.liObj[index] = liIndex;
