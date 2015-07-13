@@ -290,6 +290,40 @@
       </select>
     </div>
   </form>
+
+  <hr>
+  <form class="form-inline" id="requiredValueForm">
+    <div class="form-group">
+      <label class="col-md-1 control-label" for="requiredValue">Required value:</label>
+    </div>
+    <div class="form-group">
+      <select id="requiredValue" class="selectpicker" required>
+          <option value="">Select...</option>
+          <option value="1">option1</option>
+          <option value="2">option2</option>
+          <option value="3">option3</option>
+          <option value="4">option4</option>
+      </select>
+    </div>
+    <input type="submit" class="btn btn-primary" value="Submit" />
+  </form>
+
+  <hr>
+  <form class="form-inline" id="requiredValueMultiForm">
+    <div class="form-group">
+      <label class="col-md-1 control-label" for="requiredValueMulti">Required value (multiple):</label>
+    </div>
+    <div class="form-group">
+      <select id="requiredValueMulti" class="selectpicker" required multiple>
+          <option value>Select...</option>
+          <option value="1">option1</option>
+          <option value="2" selected>option2</option>
+          <option value="3" selected>option3</option>
+          <option value="4">option4</option>
+      </select>
+    </div>
+    <input type="submit" class="btn btn-primary" value="Submit" />
+  </form>
 </div>
 
 <script>
@@ -309,6 +343,16 @@
     $('#basic2').selectpicker({
       liveSearch: true,
       maxOptions: 1
+    });
+
+    $('#requiredValueForm').submit(function(e) {
+      e.preventDefault();
+      alert('selected: '+($('#requiredValue').val()));
+    });
+
+    $('#requiredValueMultiForm').submit(function(e) {
+      e.preventDefault();
+      alert('selected: '+($('#requiredValueMulti').val()));
     });
   });
 </script>
