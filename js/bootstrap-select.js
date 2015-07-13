@@ -141,31 +141,90 @@
   };
 
   var changed_arguments = null;
-  $.fn.triggerNative = function (eventName) {
-    var el = this[0],
-        event;
+  function createEvent(type, options) {
+    var event, eventDoc, doc, body;
+    options = $.extend({
+      bubbles: true,
+      cancelable: (type !== "mousemove"),
+      view: window,
+      detail: 0,
+      screenX: 0,
+      screenY: 0,
+      clientX: 1,
+      clientY: 1,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+      metaKey: false,
+      button: 0,
+      relatedTarget: undefined
+    }, options );
 
-    if (el.dispatchEvent) { // for modern browsers & IE9+
-      if (typeof Event === 'function') {
-        // For modern browsers
-        event = new Event(eventName, {
-          bubbles: true
+    if ( document.createEvent ) {
+      event = document.createEvent( "MouseEvents" );
+      event.initMouseEvent( type, options.bubbles, options.cancelable,
+          options.view, options.detail,
+          options.screenX, options.screenY, options.clientX, options.clientY,
+          options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
+          options.button, options.relatedTarget || document.body.parentNode );
+
+      // IE 9+ creates events with pageX and pageY set to 0.
+      // Trying to modify the properties throws an error,
+      // so we define getters to return the correct values.
+      if ( event.pageX === 0 && event.pageY === 0 && Object.defineProperty ) {
+        eventDoc = event.relatedTarget.ownerDocument || document;
+        doc = eventDoc.documentElement;
+        body = eventDoc.body;
+
+        Object.defineProperty( event, "pageX", {
+          get: function() {
+            return options.clientX +
+                ( doc && doc.scrollLeft || body && body.scrollLeft || 0 ) -
+                ( doc && doc.clientLeft || body && body.clientLeft || 0 );
+          }
         });
-      } else {
-        // For IE since it doesn't support Event constructor
-        event = document.createEvent('Event');
-        event.initEvent(eventName, true, false);
+        Object.defineProperty( event, "pageY", {
+          get: function() {
+            return options.clientY +
+                ( doc && doc.scrollTop || body && body.scrollTop || 0 ) -
+                ( doc && doc.clientTop || body && body.clientTop || 0 );
+          }
+        });
+      }
+    } else if ( document.createEventObject ) {
+      event = document.createEventObject();
+      $.extend( event, options );
+      // standards event.button uses constants defined here: http://msdn.microsoft.com/en-us/library/ie/ff974877(v=vs.85).aspx
+      // old IE event.button uses constants defined here: http://msdn.microsoft.com/en-us/library/ie/ms533544(v=vs.85).aspx
+      // so we actually need to map the standard back to oldIE
+      event.button = {
+            0: 1,
+            1: 4,
+            2: 2
+          }[ event.button ] || ( event.button === -1 ? 0 : event.button );
+    }
+
+    return event;
+  }
+
+  /**
+   * A simplified version of https://github.com/jquery/jquery-simulate/blob/master/jquery.simulate.js
+   */
+  $.fn.triggerNative = function (eventName) {
+
+    this.each(function() {
+
+      var elem = this;
+      var event = createEvent( eventName, {} );
+      if ( elem[ eventName ] ) {
+        elem[ eventName ]();
+      } else if ( elem.dispatchEvent ) {
+        elem.dispatchEvent( event );
+      } else if ( elem.fireEvent ) {
+        elem.fireEvent( "on" + eventName, event );
       }
 
-      el.dispatchEvent(event);
-    } else if (el.fireEvent) { // for IE8
-      event = document.createEventObject();
-      event.eventType = eventName;
-      el.fireEvent('on' + eventName, event);
-    } else {
-      // fall back to jQuery.trigger
-      this.trigger(eventName);
-    }
+    });
   };
   //</editor-fold>
 
