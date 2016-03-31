@@ -699,7 +699,7 @@
             return;
           }
 
-          _li.push(generateLI(generateA(text, 'opt ' + optionClass + optGroupClass, inline, tokens), index, '', optID, $this.val());
+          _li.push(generateLI(generateA(text, 'opt ' + optionClass + optGroupClass, inline, tokens), index, '', optID, $this.val()));
         } else if ($this.data('divider') === true) {
           _li.push(generateLI('', index, 'divider', null, $this.val()));
         } else if ($this.data('hidden') === true) {
