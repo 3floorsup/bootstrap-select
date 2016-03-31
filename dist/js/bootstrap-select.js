@@ -149,33 +149,93 @@
     };
   }
 
-  $.fn.triggerNative = function (eventName) {
-    var el = this[0],
-        event;
+  function createEvent(type, options) {
+    var event, eventDoc, doc, body;
+    options = $.extend({
+      bubbles: true,
+      cancelable: (type !== "mousemove"),
+      view: window,
+      detail: 0,
+      screenX: 0,
+      screenY: 0,
+      clientX: 1,
+      clientY: 1,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+      metaKey: false,
+      button: 0,
+      relatedTarget: undefined
+    }, options );
 
-    if (el.dispatchEvent) {
-      if (typeof Event === 'function') {
-        // For modern browsers
-        event = new Event(eventName, {
-          bubbles: true
+    if ( document.createEvent ) {
+      event = document.createEvent( "MouseEvents" );
+      event.initMouseEvent( type, options.bubbles, options.cancelable,
+          options.view, options.detail,
+          options.screenX, options.screenY, options.clientX, options.clientY,
+          options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
+          options.button, options.relatedTarget || document.body.parentNode );
+
+      // IE 9+ creates events with pageX and pageY set to 0.
+      // Trying to modify the properties throws an error,
+      // so we define getters to return the correct values.
+      if ( event.pageX === 0 && event.pageY === 0 && Object.defineProperty ) {
+        eventDoc = event.relatedTarget.ownerDocument || document;
+        doc = eventDoc.documentElement;
+        body = eventDoc.body;
+
+        Object.defineProperty( event, "pageX", {
+          get: function() {
+            return options.clientX +
+                ( doc && doc.scrollLeft || body && body.scrollLeft || 0 ) -
+                ( doc && doc.clientLeft || body && body.clientLeft || 0 );
+          }
         });
-      } else {
-        // For IE since it doesn't support Event constructor
-        event = document.createEvent('Event');
-        event.initEvent(eventName, true, false);
+        Object.defineProperty( event, "pageY", {
+          get: function() {
+            return options.clientY +
+                ( doc && doc.scrollTop || body && body.scrollTop || 0 ) -
+                ( doc && doc.clientTop || body && body.clientTop || 0 );
+          }
+        });
       }
-
-      el.dispatchEvent(event);
-    } else {
-      if (el.fireEvent) {
-        event = document.createEventObject();
-        event.eventType = eventName;
-        el.fireEvent('on' + eventName, event);
-      }
-
-      this.trigger(eventName);
+    } else if ( document.createEventObject ) {
+      event = document.createEventObject();
+      $.extend( event, options );
+      // standards event.button uses constants defined here: http://msdn.microsoft.com/en-us/library/ie/ff974877(v=vs.85).aspx
+      // old IE event.button uses constants defined here: http://msdn.microsoft.com/en-us/library/ie/ms533544(v=vs.85).aspx
+      // so we actually need to map the standard back to oldIE
+      event.button = {
+            0: 1,
+            1: 4,
+            2: 2
+          }[ event.button ] || ( event.button === -1 ? 0 : event.button );
     }
+
+    return event;
+  }
+
+
+  /**
+   * A simplified version of https://github.com/jquery/jquery-simulate/blob/master/jquery.simulate.js
+   */
+  $.fn.triggerNative = function (eventName) {
+
+    this.each(function() {
+
+      var elem = this;
+      var event = createEvent( eventName, {} );
+      if ( elem[ eventName ] ) {
+        elem[ eventName ]();
+      } else if ( elem.dispatchEvent ) {
+        elem.dispatchEvent( event );
+      } else if ( elem.fireEvent ) {
+        elem.fireEvent( "on" + eventName, event );
+      }
+
+    });
   };
+
   //</editor-fold>
 
   // Case insensitive contains search
@@ -519,13 +579,15 @@
        * @param [index]
        * @param [classes]
        * @param [optgroup]
+       * @param [value]
        * @returns {string}
        */
-      var generateLI = function (content, index, classes, optgroup) {
+      var generateLI = function (content, index, classes, optgroup, value) {
         return '<li' +
             ((typeof classes !== 'undefined' & '' !== classes) ? ' class="' + classes + '"' : '') +
             ((typeof index !== 'undefined' & null !== index) ? ' data-original-index="' + index + '"' : '') +
             ((typeof optgroup !== 'undefined' & null !== optgroup) ? 'data-optgroup="' + optgroup + '"' : '') +
+            ((typeof value !== 'undefined' & null !== value) ? 'data-original-value="' + value + '"' : '') +
             '>' + content + '</li>';
       };
 
@@ -607,7 +669,7 @@
             optID += 1;
 
             // Get the opt group label
-            var label = this.parentNode.label,
+            var label = $('<div/>').text(this.parentNode.label).html(),
                 labelSubtext = typeof $this.parent().data('subtext') !== 'undefined' ? '<small class="text-muted">' + $this.parent().data('subtext') + '</small>' : '',
                 labelIcon = $this.parent().data('icon') ? '<span class="' + that.options.iconBase + ' ' + $this.parent().data('icon') + '"></span> ' : '';
 
@@ -615,10 +677,10 @@
 
             if (index !== 0 && _li.length > 0) { // Is it NOT the first option of the select && are there elements in the dropdown?
               liIndex++;
-              _li.push(generateLI('', null, 'divider', optID + 'div'));
+              _li.push(generateLI('', null, 'divider', optID + 'div', $this.val()));
             }
             liIndex++;
-            _li.push(generateLI(label, null, 'dropdown-header' + optGroupClass, optID));
+            _li.push(generateLI(label, null, 'dropdown-header' + optGroupClass, optID, $this.val()));
           }
 
           if (that.options.hideDisabled && isDisabled) {
@@ -626,17 +688,17 @@
             return;
           }
 
-          _li.push(generateLI(generateA(text, 'opt ' + optionClass + optGroupClass, inline, tokens), index, '', optID));
+          _li.push(generateLI(generateA(text, 'opt ' + optionClass + optGroupClass, inline, tokens), index, '', optID, $this.val()));
         } else if ($this.data('divider') === true) {
-          _li.push(generateLI('', index, 'divider'));
+          _li.push(generateLI('', index, 'divider', null, $this.val()));
         } else if ($this.data('hidden') === true) {
-          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index, 'hidden is-hidden'));
+          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index, 'hidden is-hidden', null, $this.val()));
         } else {
           if (this.previousElementSibling && this.previousElementSibling.tagName === 'OPTGROUP') {
             liIndex++;
-            _li.push(generateLI('', null, 'divider', optID + 'div'));
+            _li.push(generateLI('', null, 'divider', optID + 'div', $this.val()));
           }
-          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index));
+          _li.push(generateLI(generateA(text, optionClass, inline, tokens), index, null, null, $this.val()));
         }
 
         that.liObj[index] = liIndex;
@@ -1184,6 +1246,11 @@
             that.$menuInner.find('.selected').removeClass('selected');
             that.setSelected(clickedIndex, true);
           } else { // Toggle the one we have chosen if we are multi select.
+
+            // prevent empty value being selected
+            if($option.val().trim() == '')
+              return;
+
             $option.prop('selected', !state);
             that.setSelected(clickedIndex, !state);
             $this.blur();
