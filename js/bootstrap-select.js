@@ -646,7 +646,7 @@
             optID += 1;
 
             // Get the opt group label
-            var label = this.parentNode.label,
+            var label = $('<div/>').text(this.parentNode.label).html(),
                 labelSubtext = typeof $this.parent().data('subtext') !== 'undefined' ? '<small class="text-muted">' + $this.parent().data('subtext') + '</small>' : '',
                 labelIcon = $this.parent().data('icon') ? '<span class="' + that.options.iconBase + ' ' + $this.parent().data('icon') + '"></span> ' : '';
 
