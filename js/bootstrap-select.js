@@ -680,7 +680,7 @@
             optID += 1;
 
             // Get the opt group label
-            var label = $parent[0].label,
+            var label = $('<div/>').text($parent[0].label).html(),
                 labelSubtext = typeof $parent.data('subtext') !== 'undefined' ? '<small class="text-muted">' + $parent.data('subtext') + '</small>' : '',
                 labelIcon = $parent.data('icon') ? '<span class="' + that.options.iconBase + ' ' + $parent.data('icon') + '"></span> ' : '';
 
