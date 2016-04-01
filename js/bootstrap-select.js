@@ -391,6 +391,7 @@
       this.autofocus = this.$element.prop('autofocus');
       this.$newElement = this.createView();
       this.$element
+		.wrap($('<div class="bootstrap-select-container"></div>'))
         .after(this.$newElement)
         .appendTo(this.$newElement);
       this.$button = this.$newElement.children('button');
